@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, ShieldAlert, Eye, CheckCircle } from "lucide-react"; // Tambah ShieldAlert
+import { Loader2, ShieldAlert, Eye, CheckCircle, TrendingUp } from "lucide-react"; // Tambah ShieldAlert
 
 export default function Dashboard() {
   const [reports, setReports] = useState<any[]>([]);
