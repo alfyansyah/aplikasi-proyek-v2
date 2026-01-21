@@ -1,59 +1,68 @@
-"use client"; // <--- INI PENTING
+"use client";
 
 import { createNewUser, createNewProject, getClients } from "./actions";
-import { Users, Briefcase, PlusCircle, ShieldAlert, Loader2 } from "lucide-react";
+import { Users, Briefcase, PlusCircle, ShieldAlert, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 export default function AdminPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
-  // Ref untuk mereset form
   const userFormRef = useRef<HTMLFormElement>(null);
   const projectFormRef = useRef<HTMLFormElement>(null);
 
-  // Ambil data client saat halaman dibuka
+  // Fungsi untuk mengambil data terbaru
+  const refreshData = async () => {
+    const data = await getClients();
+    setClients(data || []);
+  };
+
+  // Ambil data saat halaman dibuka pertama kali
   useEffect(() => {
-    getClients().then((data) => setClients(data));
+    refreshData();
   }, []);
 
-  // Wrapper untuk Handle Submit User
   async function handleUserSubmit(formData: FormData) {
     setLoading(true);
     const res = await createNewUser(formData);
-    setLoading(false);
-
+    
     if (res?.error) {
       alert("❌ GAGAL: " + res.error);
     } else {
       alert("✅ SUKSES: User Berhasil Dibuat!");
-      userFormRef.current?.reset(); // Kosongkan form
+      userFormRef.current?.reset();
+      await refreshData(); // <--- INI KUNCINYA: Ambil data ulang otomatis
     }
+    setLoading(false);
   }
 
-  // Wrapper untuk Handle Submit Proyek
   async function handleProjectSubmit(formData: FormData) {
     setLoading(true);
     const res = await createNewProject(formData);
-    setLoading(false);
-
+    
     if (res?.error) {
       alert("❌ GAGAL: " + res.error);
     } else {
       alert("✅ SUKSES: Proyek Berhasil Dibuat!");
-      projectFormRef.current?.reset(); // Kosongkan form
+      projectFormRef.current?.reset();
     }
+    setLoading(false);
   }
 
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans">
-      <h1 className="text-3xl font-bold text-slate-800 mb-8 flex items-center gap-2">
-        <ShieldAlert className="text-blue-600" /> Admin Panel
-      </h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
+          <ShieldAlert className="text-blue-600" /> Admin Panel
+        </h1>
+        <button onClick={refreshData} className="text-sm text-blue-600 flex items-center gap-1 hover:underline">
+          <RefreshCcw size={14}/> Refresh Data
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         
-        {/* --- FORM 1: BUAT USER --- */}
+        {/* FORM 1: BUAT USER */}
         <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
           <div className="flex items-center gap-2 mb-6 pb-4 border-b">
             <Users className="text-blue-500" />
@@ -92,7 +101,7 @@ export default function AdminPage() {
           </form>
         </div>
 
-        {/* --- FORM 2: BUAT PROYEK --- */}
+        {/* FORM 2: BUAT PROYEK */}
         <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
           <div className="flex items-center gap-2 mb-6 pb-4 border-b">
             <Briefcase className="text-green-600" />
@@ -120,6 +129,9 @@ export default function AdminPage() {
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-gray-400 mt-1">
+                *Klien yang baru dibuat akan otomatis muncul di sini.
+              </p>
             </div>
 
             <button type="submit" disabled={loading} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 mt-8 disabled:bg-gray-400">
