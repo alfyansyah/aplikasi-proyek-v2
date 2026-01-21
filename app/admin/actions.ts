@@ -6,10 +6,14 @@ import { revalidatePath } from 'next/cache';
 // --- 1. AMBIL LIST CLIENT (Untuk Dropdown) ---
 export async function getClients() {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data,error } = await supabase
     .from("profiles")
     .select("id, full_name, email")
-    .eq("role", "client");
+    //.eq("role", "client");
+    if (error) {
+      console.error("Error ambil client:", error); // Cek error di log server
+      return [];
+    }
   
   return data || [];
 }
