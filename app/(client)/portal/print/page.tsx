@@ -110,7 +110,7 @@ export default function PrintReportPage() {
                   {new Date(rpt.created_at).toLocaleDateString('id-ID')} | Klaim: {rpt.claimed_progress}%
                 </div>
                 <p className="text-xs italic text-gray-700 bg-gray-50 p-1 rounded">
-                  "{rpt.description_text}"
+                  {rpt.description_text}
                 </p>
               </div>
             </div>
