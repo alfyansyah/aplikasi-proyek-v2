@@ -82,6 +82,10 @@ export default function Dashboard() {
           <a href="/admin" className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black flex items-center gap-2">
             <ShieldAlert className="w-4 h-4"/> Admin Panel
           </a>
+          {/* Tombol ke Dashboard Bos */}
+          <a href="/executive" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4"/> Executive
+          </a>
           <button onClick={async () => { await supabase.auth.signOut(); router.push("/login"); }} className="bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-200">
             Logout
           </button>
