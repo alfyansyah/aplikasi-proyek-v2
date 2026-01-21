@@ -112,7 +112,7 @@ export default function Dashboard() {
               </div>
               
               <h3 className="font-bold text-gray-800">{rpt.work_items?.name || "Pekerjaan Umum"}</h3>
-              <p className="text-sm text-gray-600 mt-1 line-clamp-2 italic">"{rpt.description_text}"</p>
+              <p className="text-sm text-gray-600 mt-1 line-clamp-2 italic">{rpt.description_text}</p>
               
               <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
                 <div className="text-xs text-gray-500">
