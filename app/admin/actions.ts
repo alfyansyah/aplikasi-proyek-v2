@@ -3,7 +3,18 @@
 import { createAdminClient } from '@/utils/supabase/admin';
 import { revalidatePath } from 'next/cache';
 
-// --- FUNGSI 1: TAMBAH USER BARU ---
+// --- 1. AMBIL LIST CLIENT (Untuk Dropdown) ---
+export async function getClients() {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .eq("role", "client");
+  
+  return data || [];
+}
+
+// --- 2. BUAT USER BARU ---
 export async function createNewUser(formData: FormData) {
   const supabase = createAdminClient();
   
@@ -12,19 +23,19 @@ export async function createNewUser(formData: FormData) {
   const fullName = formData.get('fullName') as string;
   const role = formData.get('role') as string;
 
-  // 1. Buat Akun Login (Auth)
+  // Buat Akun Login
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
-    email_confirm: true, // Langsung verifikasi email
+    email_confirm: true,
   });
 
   if (authError) {
     return { error: 'Gagal buat akun: ' + authError.message };
   }
 
+  // Simpan Profil
   if (authData.user) {
-    // 2. Simpan Data Profil & Jabatan
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
@@ -34,26 +45,31 @@ export async function createNewUser(formData: FormData) {
       });
 
     if (profileError) {
-      return { error: 'Akun jadi, tapi gagal simpan profil: ' + profileError.message };
+      return { error: 'Gagal simpan profil: ' + profileError.message };
     }
   }
 
-  revalidatePath('/admin'); // Refresh halaman admin
+  revalidatePath('/admin');
   return { success: 'User berhasil dibuat!' };
 }
 
-// --- FUNGSI 2: TAMBAH PROYEK BARU ---
+// --- 3. BUAT PROYEK BARU (YANG SUDAH DIPERBAIKI) ---
 export async function createNewProject(formData: FormData) {
   const supabase = createAdminClient();
 
   const name = formData.get('name') as string;
   const location = formData.get('location') as string;
-  const ownerId = formData.get('ownerId') as string;
+  const ownerIdRaw = formData.get('ownerId') as string;
+
+  // Logika Perbaikan: Pastikan ID valid, kalau 'none' jadikan null
+  const finalOwnerId = (ownerIdRaw && ownerIdRaw !== 'none' && ownerIdRaw.length > 5) 
+    ? ownerIdRaw 
+    : null;
 
   const { error } = await supabase.from('projects').insert({
     name,
     location_name: location,
-    owner_user_id: ownerId !== 'none' ? ownerId : null,
+    owner_user_id: finalOwnerId, // Ini yang tadi NULL terus, sekarang sudah diperbaiki
     current_progress_percent: 0,
   });
 
@@ -62,16 +78,6 @@ export async function createNewProject(formData: FormData) {
   }
 
   revalidatePath('/admin');
-  revalidatePath('/submit'); // Agar muncul di HP Mandor
+  revalidatePath('/submit');
   return { success: 'Proyek berhasil dibuat!' };
-}
-
-export async function getClients() {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("profiles")
-    .select("id, full_name, email")
-    .eq("role", "client");
-  
-  return data || [];
 }
