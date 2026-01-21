@@ -65,3 +65,13 @@ export async function createNewProject(formData: FormData) {
   revalidatePath('/submit'); // Agar muncul di HP Mandor
   return { success: 'Proyek berhasil dibuat!' };
 }
+
+export async function getClients() {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .eq("role", "client");
+  
+  return data || [];
+}
