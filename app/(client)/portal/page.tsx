@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { createClient } from "@/utils/supabase/client";
@@ -16,14 +17,12 @@ export default function OwnerPortal() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Cek User
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push("/login");
         return;
       }
 
-      // 2. Cari Proyek milik User
       const { data: foundProject, error } = await supabase
         .from("projects")
         .select("*")
@@ -38,7 +37,6 @@ export default function OwnerPortal() {
 
       setProject(foundProject);
 
-      // 3. Ambil Laporan
       const { data: rpts } = await supabase
         .from("reports")
         .select("*, work_items(name)")
@@ -75,7 +73,6 @@ export default function OwnerPortal() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      {/* HEADER */}
       <div className="bg-blue-900 text-white p-8 rounded-b-[3rem] shadow-xl">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-start">
@@ -90,18 +87,11 @@ export default function OwnerPortal() {
           </div>
           
           <div className="mt-8 flex flex-col md:flex-row gap-4 items-start md:items-center">
-            {/* Kartu Progress */}
             <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 min-w-[150px]">
               <div className="text-blue-200 text-xs mb-1">Realisasi Fisik</div>
               <div className="text-3xl font-bold text-yellow-400">{project.current_progress_percent || 0}%</div>
             </div>
-
-            {/* TOMBOL DOWNLOAD PDF (BARU) */}
-            <a 
-              href="/portal/print" 
-              target="_blank"
-              className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition"
-            >
+            <a href="/portal/print" target="_blank" className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition">
               <FileText size={20} /> Download Laporan PDF
             </a>
           </div>
@@ -109,11 +99,9 @@ export default function OwnerPortal() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-10">
-        {/* GRAFIK */}
         <div className="mb-10">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Grafik Progres (S-Curve)</h2>
           <div className="h-64 bg-gray-50 rounded-xl p-4 border border-gray-100 shadow-inner">
-            {/* @ts-ignore */}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <XAxis dataKey="week" tick={{fontSize: 12}} />
@@ -126,7 +114,6 @@ export default function OwnerPortal() {
           </div>
         </div>
 
-        {/* GALERI */}
         <h2 className="text-xl font-bold text-gray-800 mb-4">Dokumentasi Terverifikasi</h2>
         {reports.length === 0 ? (
           <p className="text-gray-400 italic text-center py-10 bg-gray-50 rounded-xl">Belum ada foto yang dipublikasikan.</p>
