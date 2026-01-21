@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/client";
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, FileText, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function OwnerPortal() {
@@ -16,35 +16,34 @@ export default function OwnerPortal() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Cek Siapa yang Login?
+      // 1. Cek User
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
-        router.push("/login"); // Kalau belum login, tendang keluar
+        router.push("/login");
         return;
       }
 
-      // 2. Cari Proyek milik User ini (Spesifik!)
+      // 2. Cari Proyek milik User
       const { data: foundProject, error } = await supabase
         .from("projects")
         .select("*")
-        .eq("owner_user_id", user.id) // <--- INI KUNCI RAHASIANYA
-        .single(); // Ambil satu saja
+        .eq("owner_user_id", user.id)
+        .single();
 
       if (error || !foundProject) {
-        setErrorMsg("Anda belum memiliki proyek yang aktif atau terhubung.");
+        setErrorMsg("Anda belum memiliki proyek yang terhubung.");
         setLoading(false);
         return;
       }
 
       setProject(foundProject);
 
-      // 3. Ambil Laporan untuk Proyek yang Ditemukan tadi
+      // 3. Ambil Laporan
       const { data: rpts } = await supabase
         .from("reports")
         .select("*, work_items(name)")
-        .eq("project_id", foundProject.id) // Filter by ID Proyek yang ketemu
-        .eq("is_published_to_client", true) // Hanya yang sudah diapprove
+        .eq("project_id", foundProject.id)
+        .eq("is_published_to_client", true)
         .order("created_at", { ascending: false });
 
       if (rpts) setReports(rpts);
@@ -57,8 +56,8 @@ export default function OwnerPortal() {
   if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-blue-600"/></div>;
   
   if (errorMsg) return (
-    <div className="flex h-screen items-center justify-center p-4">
-      <div className="text-center">
+    <div className="flex h-screen items-center justify-center p-4 text-center">
+      <div>
         <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-2"/>
         <h2 className="text-lg font-bold text-gray-800">Akses Ditolak</h2>
         <p className="text-gray-500">{errorMsg}</p>
@@ -67,7 +66,6 @@ export default function OwnerPortal() {
     </div>
   );
 
-  // Data Dummy Grafik (Bisa disesuaikan nanti)
   const chartData = [
     { week: 'M1', plan: 10, actual: 10 },
     { week: 'M2', plan: 20, actual: 18 },
@@ -86,18 +84,26 @@ export default function OwnerPortal() {
               <h1 className="text-3xl md:text-4xl font-bold mb-2">{project.name}</h1>
               <p className="opacity-80 text-sm">{project.location_name}</p>
             </div>
-            <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))} className="bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-lg text-xs font-bold transition">
-              Keluar
+            <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))} className="bg-blue-800 hover:bg-blue-700 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1">
+              <LogOut size={14}/> Keluar
             </button>
           </div>
           
-          {/* STATISTIK */}
-          <div className="mt-8 grid grid-cols-2 gap-4">
-            <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20">
+          <div className="mt-8 flex flex-col md:flex-row gap-4 items-start md:items-center">
+            {/* Kartu Progress */}
+            <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 min-w-[150px]">
               <div className="text-blue-200 text-xs mb-1">Realisasi Fisik</div>
               <div className="text-3xl font-bold text-yellow-400">{project.current_progress_percent || 0}%</div>
             </div>
-            {/* Bisa ditambah info lain */}
+
+            {/* TOMBOL DOWNLOAD PDF (BARU) */}
+            <a 
+              href="/portal/print" 
+              target="_blank"
+              className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition"
+            >
+              <FileText size={20} /> Download Laporan PDF
+            </a>
           </div>
         </div>
       </div>
@@ -107,6 +113,7 @@ export default function OwnerPortal() {
         <div className="mb-10">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Grafik Progres (S-Curve)</h2>
           <div className="h-64 bg-gray-50 rounded-xl p-4 border border-gray-100 shadow-inner">
+            {/* @ts-ignore */}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <XAxis dataKey="week" tick={{fontSize: 12}} />
