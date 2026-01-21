@@ -5,18 +5,25 @@ import { revalidatePath } from 'next/cache';
 
 // --- 1. AMBIL LIST CLIENT (Untuk Dropdown) ---
 export async function getClients() {
+  // LOG 1: Cek apakah Kunci Rahasia terbaca?
+  const secretKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  console.log("🔍 CEK KUNCI: ", secretKey ? "Kunci Ada (Panjang: " + secretKey.length + ")" : "❌ KUNCI KOSONG/NULL");
+ 
   const supabase = createAdminClient();
   const { data,error } = await supabase
     .from("profiles")
     .select("id, full_name, email")
     //.eq("role", "client");
     if (error) {
-      console.error("Error ambil client:", error); // Cek error di log server
+      // LOG 2: Jika error, tampilkan detailnya
+      console.error("❌ ERROR SUPABASE:", error.message);
       return [];
     }
   
-  return data || [];
-}
+    // LOG 3: Jika sukses, beritahu berapa data yang dapat
+    console.log("✅ SUKSES: Dapat", data?.length, "user.");
+    return data || [];
+  }
 
 // --- 2. BUAT USER BARU ---
 export async function createNewUser(formData: FormData) {
