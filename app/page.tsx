@@ -106,7 +106,7 @@ export default function Dashboard() {
                  {rpt.is_published_to_client && <div className="absolute top-2 right-2 bg-blue-600 text-white text-[10px] px-2 py-1 rounded-full flex items-center shadow-lg"><Eye className="w-3 h-3 mr-1"/> Tayang</div>}
               </div>
               <h3 className="font-bold text-gray-800">{rpt.work_items?.name}</h3>
-              <p className="text-sm text-gray-600 mt-1 line-clamp-2 italic">"{rpt.description_text}"</p>
+              <p className="text-sm text-gray-600 mt-1 line-clamp-2 italic">{rpt.description_text}</p>
               <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
                 <div className="text-xs text-gray-500">Klaim: <b className="text-blue-600 text-sm">{rpt.claimed_progress}%</b></div>
                 {rpt.ai_is_valid ? (
