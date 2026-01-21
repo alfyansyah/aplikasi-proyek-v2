@@ -3,106 +3,144 @@
 import { createClient } from "@/utils/supabase/client";
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function OwnerPortal() {
   const supabase = createClient();
+  const router = useRouter();
   const [project, setProject] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Ambil Data Proyek (Hardcode ID Proyek dulu untuk demo, atau ambil yang pertama)
-      const { data: projects } = await supabase.from("projects").select("*").limit(1);
+      // 1. Cek Siapa yang Login?
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (projects && projects.length > 0) {
-        setProject(projects[0]);
-        
-        // 2. Ambil Laporan Proyek Tersebut
-        const { data: rpts } = await supabase
-          .from("reports")
-          .select("*, work_items(name)")
-          .eq("project_id", projects[0].id)
-          .order("created_at", { ascending: false });
-          
-        if (rpts) setReports(rpts);
+      if (!user) {
+        router.push("/login"); // Kalau belum login, tendang keluar
+        return;
       }
+
+      // 2. Cari Proyek milik User ini (Spesifik!)
+      const { data: foundProject, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("owner_user_id", user.id) // <--- INI KUNCI RAHASIANYA
+        .single(); // Ambil satu saja
+
+      if (error || !foundProject) {
+        setErrorMsg("Anda belum memiliki proyek yang aktif atau terhubung.");
+        setLoading(false);
+        return;
+      }
+
+      setProject(foundProject);
+
+      // 3. Ambil Laporan untuk Proyek yang Ditemukan tadi
+      const { data: rpts } = await supabase
+        .from("reports")
+        .select("*, work_items(name)")
+        .eq("project_id", foundProject.id) // Filter by ID Proyek yang ketemu
+        .eq("is_published_to_client", true) // Hanya yang sudah diapprove
+        .order("created_at", { ascending: false });
+
+      if (rpts) setReports(rpts);
       setLoading(false);
     };
+
     fetchData();
   }, []);
 
-  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin"/></div>;
-  if (!project) return <div className="p-10 text-center">Data Proyek Tidak Ditemukan</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-blue-600"/></div>;
+  
+  if (errorMsg) return (
+    <div className="flex h-screen items-center justify-center p-4">
+      <div className="text-center">
+        <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-2"/>
+        <h2 className="text-lg font-bold text-gray-800">Akses Ditolak</h2>
+        <p className="text-gray-500">{errorMsg}</p>
+        <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))} className="mt-4 text-blue-600 underline">Logout</button>
+      </div>
+    </div>
+  );
 
-  // Data Dummy untuk Grafik S-Curve (Nanti bisa diambil dari DB history)
+  // Data Dummy Grafik (Bisa disesuaikan nanti)
   const chartData = [
     { week: 'M1', plan: 10, actual: 10 },
     { week: 'M2', plan: 20, actual: 18 },
-    { week: 'M3', plan: 35, actual: project.current_progress_percent || 30 },
+    { week: 'M3', plan: 35, actual: project.current_progress_percent || 0 },
     { week: 'M4', plan: 50, actual: null },
   ];
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      {/* HEADER MEWAH */}
+      {/* HEADER */}
       <div className="bg-blue-900 text-white p-8 rounded-b-[3rem] shadow-xl">
         <div className="max-w-4xl mx-auto">
-          <p className="text-blue-300 text-sm tracking-widest uppercase mb-2">Portal Pemilik</p>
-          <h1 className="text-4xl font-bold mb-6">{project.name}</h1>
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-blue-300 text-sm tracking-widest uppercase mb-2">Portal Pemilik</p>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">{project.name}</h1>
+              <p className="opacity-80 text-sm">{project.location_name}</p>
+            </div>
+            <button onClick={() => supabase.auth.signOut().then(() => router.push('/login'))} className="bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-lg text-xs font-bold transition">
+              Keluar
+            </button>
+          </div>
           
-          {/* KARTU STATUS UTAMA */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* STATISTIK */}
+          <div className="mt-8 grid grid-cols-2 gap-4">
             <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20">
-              <div className="text-blue-200 text-xs mb-1">Progres Realisasi</div>
+              <div className="text-blue-200 text-xs mb-1">Realisasi Fisik</div>
               <div className="text-3xl font-bold text-yellow-400">{project.current_progress_percent || 0}%</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20">
-              <div className="text-blue-200 text-xs mb-1">Lokasi</div>
-              <div className="text-lg font-bold truncate">{project.location_name}</div>
-            </div>
+            {/* Bisa ditambah info lain */}
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-10">
-        
-        {/* GRAFIK S-CURVE */}
+        {/* GRAFIK */}
         <div className="mb-10">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Grafik Progres (S-Curve)</h2>
-          <div className="h-64 bg-gray-50 rounded-xl p-4 border border-gray-100">
+          <div className="h-64 bg-gray-50 rounded-xl p-4 border border-gray-100 shadow-inner">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <XAxis dataKey="week" tick={{fontSize: 12}} />
                 <YAxis hide />
                 <Tooltip />
-                <Line type="monotone" dataKey="plan" stroke="#94a3b8" strokeDasharray="5 5" name="Rencana" />
+                <Line type="monotone" dataKey="plan" stroke="#94a3b8" strokeDasharray="5 5" name="Rencana" dot={false} />
                 <Line type="monotone" dataKey="actual" stroke="#2563eb" strokeWidth={3} name="Realisasi" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* GALERI FOTO */}
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Dokumentasi Lapangan</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {reports.map((rpt) => (
-            <div key={rpt.id} className="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
-              <div className="h-48 bg-gray-200 relative">
-                <img src={rpt.photo_url} className="w-full h-full object-cover" />
-                <div className="absolute bottom-0 left-0 bg-black/50 text-white text-xs px-2 py-1">
-                  {new Date(rpt.created_at).toLocaleDateString()}
+        {/* GALERI */}
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Dokumentasi Terverifikasi</h2>
+        {reports.length === 0 ? (
+          <p className="text-gray-400 italic text-center py-10 bg-gray-50 rounded-xl">Belum ada foto yang dipublikasikan.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {reports.map((rpt) => (
+              <div key={rpt.id} className="rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition bg-white">
+                <div className="h-56 bg-gray-200 relative">
+                  <img src={rpt.photo_url} className="w-full h-full object-cover" alt="Foto Proyek" />
+                  <div className="absolute bottom-0 left-0 bg-black/60 text-white text-[10px] px-2 py-1 backdrop-blur-sm">
+                    {new Date(rpt.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="text-xs font-bold text-blue-600 uppercase mb-1">{rpt.work_items?.name}</div>
+                  <div className="text-sm text-gray-700">{rpt.description_text}</div>
                 </div>
               </div>
-              <div className="p-3">
-                <div className="font-bold text-gray-800">{rpt.work_items?.name}</div>
-                <div className="text-sm text-gray-500 mt-1">{rpt.description_text}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
