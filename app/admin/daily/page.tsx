@@ -138,7 +138,7 @@ export default function DailyReportPage() {
                       <div className="text-xs">
                         <p className="font-bold text-sm">{rpt.work_items?.name}</p>
                         <p className="text-gray-500 mb-1">{new Date(rpt.created_at).toLocaleTimeString()} | Klaim: {rpt.claimed_progress}%</p>
-                        <p className="italic">"{rpt.description_text}"</p>
+                        <p className="italic">{rpt.description_text}</p>
                         <p className="mt-1 text-blue-600 font-semibold flex items-center gap-1">
                           <CloudRain size={10}/> {rpt.weather_info}
                         </p>
