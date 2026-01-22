@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, ShieldAlert, Eye, CheckCircle, TrendingUp, Package } from "lucide-react"; // Tambah ShieldAlert
+import { Loader2, ShieldAlert, Eye, CheckCircle, TrendingUp, Package, Calendar } from "lucide-react"; // Tambah ShieldAlert
 
 export default function Dashboard() {
   const [reports, setReports] = useState<any[]>([]);
@@ -89,6 +89,10 @@ export default function Dashboard() {
           {/* Tombol Logistik */}
           <a href="/logistics" className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-orange-700 flex items-center gap-2">
             <Package className="w-4 h-4"/> Logistik
+          </a>
+          {/* Tombol Laporan Harian */}
+          <a href="/admin/daily" className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 flex items-center gap-2">
+            <Calendar className="w-4 h-4"/> LHP
           </a>
           <button onClick={async () => { await supabase.auth.signOut(); router.push("/login"); }} className="bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-200">
             Logout
