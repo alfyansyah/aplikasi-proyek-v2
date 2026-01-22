@@ -116,7 +116,7 @@ export default function PrintReportPage() {
                   {new Date(rpt.created_at).toLocaleDateString('id-ID')} | {rpt.weather_info || '-'}
                 </div>
                 <p className="text-[11px] italic text-gray-700 leading-tight">
-                  "{rpt.description_text}"
+                  {rpt.description_text}
                 </p>
               </div>
             </div>
