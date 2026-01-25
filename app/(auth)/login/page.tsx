@@ -45,7 +45,7 @@ export default function LoginPage() {
       {/* BAGIAN KIRI: GAMBAR / BRANDING (Hanya muncul di Layar Besar) */}
       <div className="hidden lg:flex w-1/2 bg-slate-900 relative items-center justify-center overflow-hidden">
         {/* Background Pattern atau Gambar Proyek */}
-        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center"></div>
+        <div className="absolute inset-0 opacity-20 bg-[url('https://prvzdhyyblbsahaxkjlc.supabase.co/storage/v1/object/public/app-assets/logo%20contech.png')] bg-cover bg-center"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-slate-900/50"></div>
         
         <div className="relative z-10 text-white p-12">
