@@ -2,49 +2,33 @@
 
 import { createClient } from "@/utils/supabase/client"; 
 import { useState, useEffect } from "react";
-import { Camera, MapPin, Send, Loader2, Share2, CheckCircle, CloudRain } from "lucide-react";
+import { Camera, MapPin, Send, Loader2, Share2, CheckCircle, CloudRain, Hammer, Building2, FileText } from "lucide-react";
 
 export default function SubmitPage() {
   const supabase = createClient();
   
-  // Data Master
   const [projects, setProjects] = useState<any[]>([]);
   const [workItems, setWorkItems] = useState<any[]>([]);
-  
-  // Input User
   const [selectedProject, setSelectedProject] = useState("");
   const [selectedItem, setSelectedItem] = useState("");
   const [claimedProgress, setClaimedProgress] = useState(0);
   const [description, setDescription] = useState("");
-  
-  // File & Lokasi
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  
-  // Info Tambahan
   const [weather, setWeather] = useState<string>("Mencari data cuaca...");
-  
-  // Status
   const [loading, setLoading] = useState(false);
   const [successData, setSuccessData] = useState<string | null>(null);
 
-  // --- 1. LOAD DATA AWAL ---
   useEffect(() => {
     const fetchData = async () => {
-      // Ambil Info Proyek Lengkap (Nama, Kontraktor, Client)
-      const { data: pData } = await supabase
-        .from("projects")
-        .select("id, name, contractor_name, client_name");
-      
+      const { data: pData } = await supabase.from("projects").select("id, name, contractor_name, client_name");
       if (pData) setProjects(pData);
-
       const { data: wData } = await supabase.from("work_items").select("*");
       if (wData) setWorkItems(wData);
     };
     fetchData();
     
-    // Ambil GPS & Cuaca
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
@@ -58,87 +42,73 @@ export default function SubmitPage() {
     }
   }, []);
 
-  // --- 2. CEK CUACA ---
   const fetchWeather = async (lat: number, lng: number) => {
     try {
       const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code&timezone=auto`);
       const data = await res.json();
       const temp = data.current.temperature_2m;
       const code = data.current.weather_code;
-      
       let condition = "Cerah";
       if (code >= 1 && code <= 3) condition = "Berawan";
       if (code >= 45 && code <= 48) condition = "Kabut";
       if (code >= 51 && code <= 67) condition = "Hujan Ringan";
       if (code >= 80 && code <= 99) condition = "Hujan Lebat";
-
       setWeather(`${condition} (${temp}°C)`);
     } catch (e) {
       setWeather("Data tidak tersedia");
     }
   };
 
-  // --- 3. FUNGSI WATERMARK (INI YANG MENEMPELKAN TEKS KE FOTO) ---
   const processWatermark = async (originalFile: File): Promise<File> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.src = URL.createObjectURL(originalFile);
-      
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) return resolve(originalFile);
-
-        // Set Ukuran Canvas
         canvas.width = img.width;
         canvas.height = img.height;
-
-        // 1. Gambar Foto Asli
         ctx.drawImage(img, 0, 0);
-
-        // 2. Buat Kotak Hitam di Bawah (Background Text)
-        const footerH = img.height * 0.35; // 35% dari tinggi foto
+        
+        // Watermark Style Baru (Lebih Modern)
+        const footerH = img.height * 0.35;
         const footerY = img.height - footerH;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        
+        // Gradient Background
+        const gradient = ctx.createLinearGradient(0, footerY, 0, img.height);
+        gradient.addColorStop(0, "rgba(0,0,0,0)");
+        gradient.addColorStop(0.3, "rgba(0,0,0,0.7)");
+        gradient.addColorStop(1, "rgba(0,0,0,0.9)");
+        ctx.fillStyle = gradient;
         ctx.fillRect(0, footerY, img.width, footerH);
 
-        // 3. Siapkan Data Teks
         const projData = projects.find(p => p.id === selectedProject);
         const itemData = workItems.find(w => w.id === selectedItem);
         const dateStr = new Date().toLocaleString('id-ID');
 
-        // 4. Tulis Teks (Warna Putih)
-        const fontSize = img.width * 0.035; // Ukuran font responsif
-        ctx.font = `bold ${fontSize}px Arial`;
-        ctx.fillStyle = 'white';
+        const fontSize = img.width * 0.035;
+        ctx.font = `600 ${fontSize}px sans-serif`;
+        ctx.fillStyle = '#ffffff';
         ctx.textBaseline = 'top';
         
-        const pad = img.width * 0.04; // Padding pinggir
-        let textY = footerY + pad;
-        const lineHeight = fontSize * 1.5;
+        const pad = img.width * 0.05;
+        let textY = footerY + (pad * 1.5);
+        const lineHeight = fontSize * 1.6;
 
-        // Baris 1: Nama Proyek
-        ctx.fillText(`PROYEK: ${projData?.name || '-'}`, pad, textY);
+        ctx.fillStyle = '#fbbf24'; // Warna Kuning Emas untuk Judul
+        ctx.fillText(`${projData?.name || 'PROYEK'}`, pad, textY);
+        
+        ctx.fillStyle = '#ffffff'; // Kembali Putih
+        textY += lineHeight * 1.2;
+        ctx.fillText(`📍 ${location?.lat.toFixed(5)}, ${location?.lng.toFixed(5)}`, pad, textY);
         textY += lineHeight;
-
-        // Baris 2: Pemberi Kerja
-        ctx.fillText(`OWNER: ${projData?.client_name || '-'}`, pad, textY);
+        ctx.fillText(`🔨 ${itemData?.name || 'Kegiatan Umum'}`, pad, textY);
         textY += lineHeight;
-
-        // Baris 3: Kontraktor
-        ctx.fillText(`KONTRAKTOR: ${projData?.contractor_name || '-'}`, pad, textY);
+        ctx.fillText(`🌤️ ${weather}`, pad, textY);
         textY += lineHeight;
+        ctx.fillText(`🕒 ${dateStr}`, pad, textY);
 
-        // Baris 4: Item Pekerjaan & Cuaca
-        ctx.fillText(`KEGIATAN: ${itemData?.name || 'Umum'} | ${weather}`, pad, textY);
-        textY += lineHeight;
-
-        // Baris 5: Koordinat & Waktu
-        ctx.fillText(`LOKASI: ${location?.lat.toFixed(5)}, ${location?.lng.toFixed(5)}`, pad, textY);
-        textY += lineHeight;
-        ctx.fillText(`WAKTU: ${dateStr}`, pad, textY);
-
-        // 5. Convert balik ke File
         canvas.toBlob((blob) => {
           if (blob) resolve(new File([blob], originalFile.name, { type: 'image/jpeg' }));
           else resolve(originalFile);
@@ -156,23 +126,15 @@ export default function SubmitPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !selectedProject || !location) {
-      alert("Mohon lengkapi Data!");
-      return;
-    }
-
+    if (!file || !selectedProject || !location) return alert("Mohon lengkapi Data!");
     setLoading(true);
     try {
-      // PROSES WATERMARK DULU SEBELUM UPLOAD
       const fileToUpload = await processWatermark(file);
-
-      // Upload
       const fileName = `${Date.now()}.jpg`;
       const { error: upErr } = await supabase.storage.from("report-images").upload(`${selectedProject}/${fileName}`, fileToUpload);
       if (upErr) throw upErr;
       const { data: urlData } = supabase.storage.from("report-images").getPublicUrl(`${selectedProject}/${fileName}`);
 
-      // Simpan DB
       const { error: dbErr } = await supabase.from("reports").insert({
         project_id: selectedProject,
         work_item_id: selectedItem || null,
@@ -184,17 +146,13 @@ export default function SubmitPage() {
         weather_info: weather,
         created_at: new Date().toISOString(),
       });
-
       if (dbErr) throw dbErr;
 
-      // Siapkan Pesan WA
       const projName = projects.find(p => p.id === selectedProject)?.name;
       const gmaps = `https://maps.google.com/?q=${location.lat},${location.lng}`;
       const msg = `*LAPORAN BARU* %0A🏗️ ${projName} %0A📊 Prog: ${claimedProgress}% %0A🌦️ ${weather} %0A📍 ${gmaps} %0A📷 ${urlData.publicUrl}`;
-      
       setSuccessData(msg);
       setFile(null); setPreviewUrl(null); setDescription(""); setClaimedProgress(0);
-
     } catch (error: any) {
       alert("Error: " + error.message);
     } finally {
@@ -204,72 +162,108 @@ export default function SubmitPage() {
 
   if (successData) {
     return (
-      <div className="min-h-screen bg-green-50 p-6 flex flex-col items-center justify-center text-center font-sans">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6"><CheckCircle className="w-10 h-10 text-green-600"/></div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Terkirim!</h2>
-        <p className="text-gray-600 mb-8">Foto sudah diberi watermark & disimpan.</p>
-        <a href={`https://wa.me/?text=${successData}`} target="_blank" className="w-full bg-green-600 text-white py-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"><Share2/> Kirim WA</a>
-        <button onClick={() => setSuccessData(null)} className="mt-6 text-gray-500 underline">Lapor Lagi</button>
+      <div className="min-h-screen bg-white p-6 flex flex-col items-center justify-center text-center font-sans">
+        <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6 ring-4 ring-green-100">
+          <CheckCircle className="w-12 h-12 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Laporan Diterima!</h2>
+        <p className="text-slate-500 mb-8 max-w-xs mx-auto">Data telah tersimpan di server dan siap dipantau.</p>
+        <a href={`https://wa.me/?text=${successData}`} target="_blank" className="w-full max-w-sm bg-[#25D366] text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-green-200 hover:bg-green-600 flex items-center justify-center gap-3 transition transform active:scale-95">
+          <Share2 size={24}/> Lapor ke Grup WA
+        </a>
+        <button onClick={() => setSuccessData(null)} className="mt-6 text-slate-400 font-medium text-sm hover:text-slate-600">Buat Laporan Baru</button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 font-sans max-w-md mx-auto">
-      <h1 className="text-xl font-bold mb-4 text-gray-800">Lapor Lapangan 👷‍♂️</h1>
+    <div className="min-h-screen bg-slate-50 p-4 pb-20 font-sans">
+      <div className="max-w-md mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-800">Lapor Lapangan</h1>
+          <p className="text-sm text-slate-500">Update progres harian proyek.</p>
+        </div>
       
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white p-4 rounded-xl shadow-sm">
-        {/* PROYEK */}
-        <div>
-          <label className="text-xs font-bold text-gray-500 uppercase">Proyek</label>
-          <select className="w-full p-3 border rounded-lg mt-1 bg-white" value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)} required>
-            <option value="">-- Pilih Proyek --</option>
-            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          
+          {/* SELECTION CARD */}
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+            <div className="relative">
+              <Building2 className="absolute left-3 top-3.5 text-blue-500 w-5 h-5"/>
+              <select className="w-full pl-10 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none font-medium text-slate-700" value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)} required>
+                <option value="">Pilih Proyek...</option>
+                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
 
-        {/* PEKERJAAN */}
-        <div>
-          <label className="text-xs font-bold text-gray-500 uppercase">Pekerjaan</label>
-          <select className="w-full p-3 border rounded-lg mt-1 bg-white" value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
-            <option value="">-- Jenis Kegiatan --</option>
-            {workItems.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-          </select>
-        </div>
-
-        {/* CUACA */}
-        <div className="bg-blue-50 p-3 rounded-lg flex items-center gap-3 border border-blue-100">
-          <CloudRain className="text-blue-500 w-6 h-6" />
-          <div>
-            <p className="text-xs text-blue-400 font-bold uppercase">Cuaca (Otomatis)</p>
-            <p className="text-sm font-bold text-blue-900">{weather}</p>
+            <div className="relative">
+              <Hammer className="absolute left-3 top-3.5 text-orange-500 w-5 h-5"/>
+              <select className="w-full pl-10 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none appearance-none font-medium text-slate-700" value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
+                <option value="">Pilih Kegiatan...</option>
+                {workItems.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </div>
           </div>
-        </div>
 
-        {/* PROGRESS */}
-        <div>
-           <div className="flex justify-between"><label className="text-xs font-bold text-gray-500 uppercase">Klaim Progres</label><span className="text-blue-600 font-bold">{claimedProgress}%</span></div>
-           <input type="range" min="0" max="100" step="5" value={claimedProgress} onChange={(e) => setClaimedProgress(Number(e.target.value))} className="w-full mt-2" />
-        </div>
+          {/* WEATHER & GPS CARD */}
+          <div className="flex gap-3">
+            <div className="flex-1 bg-blue-50 p-3 rounded-2xl border border-blue-100 flex items-center gap-3">
+              <div className="bg-white p-2 rounded-full shadow-sm"><CloudRain className="text-blue-500 w-5 h-5" /></div>
+              <div>
+                <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wide">Cuaca</p>
+                <p className="text-xs font-bold text-blue-900 truncate">{weather}</p>
+              </div>
+            </div>
+            <div className="flex-1 bg-emerald-50 p-3 rounded-2xl border border-emerald-100 flex items-center gap-3">
+              <div className="bg-white p-2 rounded-full shadow-sm"><MapPin className="text-emerald-500 w-5 h-5" /></div>
+              <div>
+                <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wide">GPS</p>
+                <p className="text-xs font-bold text-emerald-900 truncate">{location ? "Terkunci" : "Mencari..."}</p>
+              </div>
+            </div>
+          </div>
 
-        {/* KAMERA */}
-        <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center relative bg-gray-50">
-          <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="absolute inset-0 opacity-0 z-10 w-full h-full" required />
-          {previewUrl ? <img src={previewUrl} className="h-48 w-full object-cover rounded shadow-sm" /> : <div className="text-gray-400 py-4"><Camera className="w-10 h-10 mx-auto mb-2"/><span className="text-sm">Ambil Foto</span></div>}
-        </div>
+          {/* CAMERA CARD (BIG) */}
+          <div className="relative group cursor-pointer">
+            <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="absolute inset-0 opacity-0 z-20 w-full h-full cursor-pointer" required />
+            <div className={`aspect-[4/3] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative z-10 
+              ${previewUrl ? 'border-blue-500 bg-black' : 'border-slate-300 bg-white hover:bg-slate-50'}`}>
+              
+              {previewUrl ? (
+                <img src={previewUrl} className="w-full h-full object-contain" />
+              ) : (
+                <div className="text-center p-6">
+                  <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Camera className="w-8 h-8 text-blue-600"/>
+                  </div>
+                  <span className="block font-bold text-slate-700">Ambil Foto Bukti</span>
+                  <span className="text-xs text-slate-400 mt-1">Tap disini untuk buka kamera</span>
+                </div>
+              )}
+            </div>
+          </div>
 
-        {/* GPS */}
-        <div className="flex items-center gap-2 text-xs bg-gray-100 p-3 rounded text-gray-600">
-          <MapPin className="w-4 h-4 text-red-500" />
-          {location ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}` : "Mencari Lokasi..."}
-        </div>
+          {/* PROGRESS & NOTE */}
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+            <div>
+               <div className="flex justify-between mb-2">
+                 <label className="text-xs font-bold text-slate-400 uppercase">Estimasi Progres</label>
+                 <span className="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded text-xs">{claimedProgress}%</span>
+               </div>
+               <input type="range" min="0" max="100" step="5" value={claimedProgress} onChange={(e) => setClaimedProgress(Number(e.target.value))} className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+            </div>
+            
+            <div className="relative">
+              <FileText className="absolute left-3 top-3 text-slate-400 w-5 h-5"/>
+              <textarea placeholder="Catatan lapangan (Kendala, material, dll)..." className="w-full pl-10 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm h-24 resize-none" value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+          </div>
 
-        <textarea placeholder="Catatan..." className="w-full p-3 border rounded-lg h-24" value={description} onChange={(e) => setDescription(e.target.value)} />
-
-        <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold flex justify-center items-center gap-2">
-          {loading ? <Loader2 className="animate-spin" /> : <Send className="w-5 h-5" />} Kirim Laporan
-        </button>
-      </form>
+          <button type="submit" disabled={loading || !location} className="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold flex justify-center items-center gap-2 hover:bg-black shadow-xl shadow-slate-200 active:scale-95 transition disabled:opacity-70 disabled:active:scale-100">
+            {loading ? <Loader2 className="animate-spin" /> : <><Send className="w-5 h-5" /> Kirim Laporan</>}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
