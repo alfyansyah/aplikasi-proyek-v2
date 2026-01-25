@@ -65,7 +65,14 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-slate-50">
         <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
           
-          <div className="mb-8">
+        <div className="mb-8 text-center lg:text-left">
+            {/* LOGO BRAND DI LOGIN */}
+            <img 
+              src="https://prvzdhyyblbsahaxkjlc.supabase.co/storage/v1/object/public/app-assets/logo%20contech.png"
+              alt="Logo Brand"
+              className="h-12 w-auto mb-6 mx-auto lg:mx-0"
+            />
+
             <h2 className="text-2xl font-bold text-slate-800">Selamat Datang Kembali</h2>
             <p className="text-slate-500 text-sm mt-1">Silakan masuk ke akun manajemen proyek Anda.</p>
           </div>

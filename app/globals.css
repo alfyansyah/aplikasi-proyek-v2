@@ -34,3 +34,27 @@ body {
 .animate-slow-zoom {
   animation: slow-zoom 20s infinite ease-in-out;
 }
+/* --- ANIMASI TAMBAHAN --- */
+
+/* 1. Definisi Putaran (360 derajat) */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 2. Gabungan: Bernapas (Scale) + Berputar (Rotate) */
+/* Kita buat animasi gabungan agar mulus */
+@keyframes breathe-and-spin {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+
+/* Class untuk dipanggil di HTML */
+.animate-spin-slow {
+  animation: spin-slow 60s linear infinite; /* Berputar pelan 1 putaran per menit */
+}
+
+.animate-complex {
+  animation: breathe-and-spin 40s infinite linear; /* Kombinasi zoom & putar */
+}

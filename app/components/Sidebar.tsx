@@ -89,15 +89,23 @@ export default function Sidebar() {
       >
         
         {/* --- BRANDING AREA (LOGO) --- */}
-        <div className="h-24 flex items-center justify-center border-b border-slate-800 bg-slate-950">
-          {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
-          ) : (
-            <div className="flex items-center gap-2 font-bold text-xl tracking-wider">
-              <Building2 className="text-orange-500" />
-              <span>KONTRAKTOR<span className="text-orange-500">.PRO</span></span>
-            </div>
-          )}
+        <div className="h-20 flex items-center justify-center border-b border-slate-800 bg-slate-950 px-4 shadow-sm">
+          
+          {/* LOGO BRAND ANDA (Hardcode URL Logo Anda disini juga) */}
+          <img 
+            src="https://prvzdhyyblbsahaxkjlc.supabase.co/storage/v1/object/public/app-assets/logo%20contech.png" 
+            alt="Brand" 
+            className="h-8 w-auto mr-3" 
+          />
+
+          <div className="flex flex-col">
+            <span className="font-bold text-lg tracking-wider text-white leading-none">
+              KONTRAKTOR
+            </span>
+            <span className="text-[10px] font-bold text-orange-500 tracking-[0.3em] leading-none">
+              PRO APP
+            </span>
+          </div>
         </div>
 
         {/* --- NAVIGATION MENU --- */}
