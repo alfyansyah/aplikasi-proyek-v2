@@ -36,10 +36,12 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans">
       <div className="flex justify-between items-center mb-8">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-2">
-          <ShieldAlert className="text-blue-600" /> Admin Panel V2
+          <ShieldAlert className="text-blue-600" /> Admin Panel
         </h1>
-        <button onClick={refreshData} className="text-blue-600 flex gap-1 items-center text-sm"><RefreshCcw size={14}/> Refresh</button>
+        <p className="text-slate-500 mt-1">Kelola data master proyek dan pengguna.</p>
+      </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
