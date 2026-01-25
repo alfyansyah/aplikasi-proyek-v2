@@ -40,12 +40,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-white font-sans">
+    // UBAH 1: bg-white dihapus, ganti jadi transparan agar background layout terlihat
+    <div className="min-h-screen flex w-full font-sans relative">
       
-      {/* BAGIAN KIRI: GAMBAR / BRANDING (Hanya muncul di Layar Besar) */}
+      {/* BAGIAN KIRI: BRANDING (Tetap Gelap) */}
       <div className="hidden lg:flex w-1/2 bg-slate-900 relative items-center justify-center overflow-hidden">
-        {/* Background Pattern atau Gambar Proyek */}
-        <div className="absolute inset-0 opacity-20 bg-[url('https://prvzdhyyblbsahaxkjlc.supabase.co/storage/v1/object/public/app-assets/logo%20contech.png')] bg-cover bg-center"></div>
+        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-slate-900/50"></div>
         
         <div className="relative z-10 text-white p-12">
@@ -56,21 +56,25 @@ export default function LoginPage() {
             <h1 className="text-3xl font-bold tracking-tight">KONTRAKTOR PRO</h1>
           </div>
           <p className="text-xl text-slate-300 font-light leading-relaxed">
-            Membangun masa depan dengan transparansi data dan integritas konstruksi terpercaya.
+            "Membangun masa depan dengan transparansi data dan integritas konstruksi terpercaya."
           </p>
         </div>
       </div>
 
       {/* BAGIAN KANAN: FORM LOGIN */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-slate-50">
-        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
+      {/* UBAH 2: bg-slate-50 dihapus/diganti transparan */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative">
+        
+        {/* Kartu Form Login (Tetap Putih agar tulisan terbaca) */}
+        <div className="w-full max-w-md bg-white/80 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-white/50 relative z-10">
           
-        <div className="mb-8 text-center lg:text-left">
+          <div className="mb-8 text-center lg:text-left">
             {/* LOGO BRAND DI LOGIN */}
+            {/* Pastikan URL ini benar logo Anda */}
             <img 
               src="https://prvzdhyyblbsahaxkjlc.supabase.co/storage/v1/object/public/app-assets/logo%20contech.png"
               alt="Logo Brand"
-              className="h-12 w-auto mb-6 mx-auto lg:mx-0"
+              className="h-12 w-auto mb-6 mx-auto lg:mx-0 animate-pulse" 
             />
 
             <h2 className="text-2xl font-bold text-slate-800">Selamat Datang Kembali</h2>
@@ -78,7 +82,6 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
-            
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Email Perusahaan</label>
               <div className="relative">
@@ -87,7 +90,7 @@ export default function LoginPage() {
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all shadow-sm"
                   placeholder="nama@perusahaan.com"
                   required 
                 />
@@ -102,7 +105,7 @@ export default function LoginPage() {
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all shadow-sm"
                   placeholder="••••••••"
                   required 
                 />
@@ -126,7 +129,7 @@ export default function LoginPage() {
 
           <div className="mt-8 text-center">
             <p className="text-xs text-slate-400">
-              © 2024 Sistem Manajemen Konstruksi. v2.0
+              © 2026 Sistem Manajemen Konstruksi. v2.0
             </p>
           </div>
         </div>
