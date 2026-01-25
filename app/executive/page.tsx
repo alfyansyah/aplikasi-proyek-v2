@@ -1,15 +1,21 @@
+// @ts-nocheck
 "use client";
 
 import { createClient } from "@/utils/supabase/client";
 import { useEffect, useState } from "react";
-import { Loader2, Briefcase, TrendingUp, AlertTriangle, CheckCircle, ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { Loader2, Briefcase, TrendingUp, AlertTriangle, CheckCircle, Wallet, Calendar } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export default function ExecutiveDashboard() {
   const supabase = createClient();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ total: 0, avgProgress: 0, critical: 0 });
+  const [stats, setStats] = useState({ 
+    total: 0, 
+    avgProgress: 0, 
+    critical: 0,
+    totalValue: 0 
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -22,16 +28,18 @@ export default function ExecutiveDashboard() {
       if (data) {
         setProjects(data);
         
-        // Hitung Statistik Sederhana
+        // Hitung Statistik
         const total = data.length;
         const totalProg = data.reduce((acc, curr) => acc + (curr.current_progress_percent || 0), 0);
-        // Anggap "Kritis" jika progres di bawah 20% (Contoh logika)
         const crit = data.filter(p => (p.current_progress_percent || 0) < 20).length;
+        // Hitung Total Nilai Kontrak (Asumsi kolom contract_value ada, jika null dianggap 0)
+        const value = data.reduce((acc, curr) => acc + (curr.contract_value || 0), 0);
 
         setStats({
           total,
           avgProgress: total > 0 ? Math.round(totalProg / total) : 0,
-          critical: crit
+          critical: crit,
+          totalValue: value
         });
       }
       setLoading(false);
@@ -40,97 +48,124 @@ export default function ExecutiveDashboard() {
     fetchData();
   }, []);
 
-  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600"/></div>;
+  // Format Rupiah
+  const formatRupiah = (num: number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
+  };
+
+  if (loading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="w-10 h-10 animate-spin text-blue-600"/></div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans">
+    <div className="min-h-screen bg-slate-50 p-6 lg:p-10 font-sans">
       
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Executive Summary 💼</h1>
-          <p className="text-slate-500">Pantauan Portfolio Proyek Perusahaan</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Executive Summary</p>
+          <h1 className="text-3xl font-bold text-slate-800">Portfolio Proyek</h1>
         </div>
-        <Link href="/" className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:underline">
-          <ArrowLeft size={16}/> Kembali ke Operasional
-        </Link>
-      </div>
-
-      {/* KARTU STATISTIK (BIG NUMBERS) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-          <div className="p-4 bg-blue-100 rounded-full text-blue-600"><Briefcase size={24}/></div>
-          <div>
-            <p className="text-sm text-slate-500 uppercase font-bold">Total Proyek</p>
-            <p className="text-3xl font-bold text-slate-800">{stats.total}</p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-          <div className="p-4 bg-green-100 rounded-full text-green-600"><TrendingUp size={24}/></div>
-          <div>
-            <p className="text-sm text-slate-500 uppercase font-bold">Rata-Rata Progres</p>
-            <p className="text-3xl font-bold text-slate-800">{stats.avgProgress}%</p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-          <div className="p-4 bg-orange-100 rounded-full text-orange-600"><AlertTriangle size={24}/></div>
-          <div>
-            <p className="text-sm text-slate-500 uppercase font-bold">Perlu Perhatian</p>
-            <p className="text-3xl font-bold text-slate-800">{stats.critical}</p>
-            <p className="text-xs text-orange-500">(Progres &lt; 20%)</p>
-          </div>
+        <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 text-sm text-slate-600 flex items-center gap-2">
+          <Calendar size={16} className="text-blue-500"/>
+          {new Date().toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'})}
         </div>
       </div>
 
-      {/* TABEL STATUS PROYEK */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-6 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Status Detail Proyek</h2>
+      {/* STATS CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        
+        {/* Total Proyek */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10"><Briefcase size={64}/></div>
+          <p className="text-slate-500 text-xs font-bold uppercase mb-2">Total Proyek Aktif</p>
+          <p className="text-4xl font-bold text-slate-800">{stats.total}</p>
+          <div className="mt-4 flex items-center text-xs text-blue-600 font-medium bg-blue-50 w-fit px-2 py-1 rounded">
+            Sedang Berjalan
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 text-slate-700 uppercase font-bold text-xs">
-              <tr>
-                <th className="p-4">Nama Proyek</th>
-                <th className="p-4">Lokasi</th>
-                <th className="p-4">Pemilik (Client)</th>
-                <th className="p-4">Progres</th>
-                <th className="p-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {projects.map((proj) => (
-                <tr key={proj.id} className="hover:bg-slate-50 transition">
-                  <td className="p-4 font-bold text-slate-800">{proj.name}</td>
-                  <td className="p-4">{proj.location_name}</td>
-                  <td className="p-4">
-                    {/* Mengambil nama client dari relasi profiles */}
-                    {proj.profiles?.full_name || <span className="text-gray-400 italic">Belum diset</span>}
-                  </td>
-                  <td className="p-4">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1 max-w-[100px]">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${proj.current_progress_percent}%` }}></div>
-                    </div>
-                    <span className="text-xs font-bold">{proj.current_progress_percent}%</span>
-                  </td>
-                  <td className="p-4">
-                    {proj.current_progress_percent >= 50 ? (
-                      <span className="inline-flex items-center gap-1 text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs font-bold">
-                        <CheckCircle size={12}/> Aman
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-orange-600 bg-orange-100 px-2 py-1 rounded-full text-xs font-bold">
-                        <AlertTriangle size={12}/> Awal/Lambat
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        {/* Rata-Rata Progres */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp size={64} className="text-green-600"/></div>
+          <p className="text-slate-500 text-xs font-bold uppercase mb-2">Rata-Rata Progres</p>
+          <p className="text-4xl font-bold text-slate-800">{stats.avgProgress}<span className="text-xl">%</span></p>
+          <div className="mt-4 flex items-center text-xs text-green-600 font-medium bg-green-50 w-fit px-2 py-1 rounded">
+            Overall Performance
+          </div>
+        </div>
+
+        {/* Total Nilai Kontrak */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10"><Wallet size={64} className="text-purple-600"/></div>
+          <p className="text-slate-500 text-xs font-bold uppercase mb-2">Total Nilai Kontrak</p>
+          <p className="text-2xl font-bold text-slate-800 truncate" title={formatRupiah(stats.totalValue)}>
+            {stats.totalValue > 1000000000 
+              ? `Rp ${(stats.totalValue / 1000000000).toFixed(1)} M` 
+              : formatRupiah(stats.totalValue)}
+          </p>
+          <div className="mt-4 flex items-center text-xs text-purple-600 font-medium bg-purple-50 w-fit px-2 py-1 rounded">
+            Revenue Potential
+          </div>
+        </div>
+
+        {/* Proyek Kritis */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10"><AlertTriangle size={64} className="text-red-600"/></div>
+          <p className="text-slate-500 text-xs font-bold uppercase mb-2">Perlu Perhatian</p>
+          <p className="text-4xl font-bold text-slate-800">{stats.critical}</p>
+          <div className="mt-4 flex items-center text-xs text-red-600 font-medium bg-red-50 w-fit px-2 py-1 rounded">
+            Progres &lt; 20%
+          </div>
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* CHART SECTION */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <TrendingUp size={20} className="text-blue-600"/> Perbandingan Progres Proyek
+          </h3>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={projects} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <XAxis type="number" domain={[0, 100]} hide />
+                <YAxis dataKey="name" type="category" width={150} tick={{fontSize: 12}} />
+                <Tooltip cursor={{fill: 'transparent'}} />
+                <Bar dataKey="current_progress_percent" name="Progres (%)" radius={[0, 4, 4, 0]} barSize={20}>
+                  {projects.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.current_progress_percent >= 50 ? '#22c55e' : entry.current_progress_percent >= 20 ? '#3b82f6' : '#ef4444'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* LIST RINGKAS */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="font-bold text-slate-800 mb-6">Status Terkini</h3>
+          <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+            {projects.map((proj) => (
+              <div key={proj.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="truncate pr-4">
+                  <p className="text-sm font-bold text-slate-700 truncate">{proj.name}</p>
+                  <p className="text-xs text-slate-500">{proj.location_name}</p>
+                </div>
+                <div className="text-right whitespace-nowrap">
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                    proj.current_progress_percent >= 50 ? "bg-green-100 text-green-700" :
+                    proj.current_progress_percent >= 20 ? "bg-blue-100 text-blue-700" :
+                    "bg-red-100 text-red-700"
+                  }`}>
+                    {proj.current_progress_percent}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
