@@ -56,7 +56,7 @@ export default function LoginPage() {
             <h1 className="text-3xl font-bold tracking-tight">KONTRAKTOR PRO</h1>
           </div>
           <p className="text-xl text-slate-300 font-light leading-relaxed">
-            "Membangun masa depan dengan transparansi data dan integritas konstruksi terpercaya."
+            Membangun masa depan dengan transparansi data dan integritas konstruksi terpercaya.
           </p>
         </div>
       </div>
