@@ -1,15 +1,13 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { type NextRequest, NextResponse } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 export async function middleware(request: NextRequest) {
-  // 1. Siapkan response
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
 
-  // 2. Hubungkan ke Supabase (Khusus Middleware)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -38,7 +36,7 @@ export async function middleware(request: NextRequest) {
         remove(name: string, options: CookieOptions) {
           request.cookies.set({
             name,
-            value: '',
+            value: "",
             ...options,
           });
           response = NextResponse.next({
@@ -48,7 +46,7 @@ export async function middleware(request: NextRequest) {
           });
           response.cookies.set({
             name,
-            value: '',
+            value: "",
             ...options,
           });
         },
@@ -56,27 +54,37 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 3. Cek apakah User ada (Sudah Login?)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+  const path = request.nextUrl.pathname;
 
-  // ATURAN KEAMANAN:
+  // --- ATURAN KEAMANAN BARU ---
 
-  // A. Kalau belum login, tapi mau buka halaman dalam -> Tendang ke /login
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // 1. JIKA BELUM LOGIN (GUEST)
+  if (!user) {
+    // Halaman yang BOLEH diakses tanpa login:
+    // - Landing Page ("/")
+    // - Login Page ("/login")
+    
+    // Jika dia mencoba masuk ke tempat lain (misal /dashboard, /admin), TENDANG KE LOGIN
+    if (path !== "/" && !path.startsWith("/login")) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
 
-  // B. Kalau sudah login, tapi mau buka halaman login -> Lempar ke Dashboard (/)
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // 2. JIKA SUDAH LOGIN (MEMBER)
+  if (user) {
+    // Jika dia mencoba buka Landing Page atau Login lagi, LEMPAR KE DASHBOARD
+    // Supaya dia tidak perlu login ulang
+    if (path === "/" || path.startsWith("/login")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
 
   return response;
 }
 
-// Konfigurasi: Middleware ini jalan di semua halaman KECUALI file gambar/sistem
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api).*)",
+  ],
 };
