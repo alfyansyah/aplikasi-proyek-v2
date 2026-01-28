@@ -29,7 +29,7 @@ export default function LandingPage() {
           
           {/* LOGO RESMI DI HEADER (Ganti ShieldCheck dengan Img) */}
           <div className="bg-white/10 p-2 rounded-xl backdrop-blur-md border border-white/10 shadow-lg">
-            <img src="https://prvzdhyyblbsahaxkjlc.supabase.co/storage/v1/object/public/app-assets/logo-contech-beckground.png className="w-8 h-8 object-contain alt="Logo"/>
+            <img src="https://prvzdhyyblbsahaxkjlc.supabase.co/storage/v1/object/public/app-assets/logo%20contech.png" className="w-8 h-8 object-contain" alt="Logo"/>
           </div>
           
           <span className="text-2xl">CONTECH<span className="text-orange-500">LABS</span></span>
