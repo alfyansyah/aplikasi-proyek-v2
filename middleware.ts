@@ -65,12 +65,12 @@ export async function middleware(request: NextRequest) {
 
   // A. Kalau belum login, tapi mau buka halaman dalam -> Tendang ke /login
   if (!user && !request.nextUrl.pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   // B. Kalau sudah login, tapi mau buka halaman login -> Lempar ke Dashboard (/)
   if (user && request.nextUrl.pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return response;

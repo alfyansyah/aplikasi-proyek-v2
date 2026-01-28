@@ -35,7 +35,7 @@ export default function LoginPage() {
       
       if (role === 'client') window.location.href = '/portal';
       else if (role === 'field_worker') window.location.href = '/submit';
-      else window.location.href = '/';
+      else window.location.href = '/dashboard';
     }
   };
 

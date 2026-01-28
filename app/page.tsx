@@ -1,111 +1,107 @@
-"use client";
+import Link from "next/link";
+import { ArrowRight, CheckCircle, ShieldCheck, Zap, Globe, Lock } from "lucide-react";
+import BrandBackground from "./components/BrandBackground";
 
-import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Loader2, ShieldAlert, Eye, CheckCircle } from "lucide-react";
-
-export default function Dashboard() {
-  const [reports, setReports] = useState<any[]>([]);
-  const [userEmail, setUserEmail] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  
-  const router = useRouter();
-  const supabase = createClient();
-
-  const getData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profile?.role === "client") {
-      router.push("/portal");
-      return;
-    }
-    if (profile?.role === "field_worker") {
-      router.push("/submit");
-      return;
-    }
-
-    setUserEmail(user.email || "");
-
-    const { data: reportsData } = await supabase
-      .from("reports")
-      .select("*, projects(name), work_items(name)")
-      .order("created_at", { ascending: false });
-
-    if (reportsData) setReports(reportsData);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    getData();
-  }, []);
-
-  const handleApprove = async (reportId: string) => {
-    setProcessingId(reportId);
-    await supabase.from("reports").update({ ai_is_valid: true, is_published_to_client: true }).eq("id", reportId);
-    await getData();
-    setProcessingId(null);
-  };
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600"/></div>;
-  }
-
+export default function LandingPage() {
   return (
-    <div className="font-sans">
+    <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-orange-500 selection:text-white overflow-hidden relative">
       
-      {/* HEADER BERSIH (Tanpa Tombol Navigasi) */}
-      <header className="mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Command Center 🏗️</h1>
-          <p className="text-slate-500 text-sm mt-1">Selamat datang, {userEmail}</p>
-        </div>
-      </header>
+      {/* BACKGROUND GRID (Efek Tech) */}
+      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+      
+      {/* LOGO BACKGROUND ANIMASI */}
+      <BrandBackground />
 
-      {/* GRID LAPORAN */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {reports.length === 0 ? (
-          <div className="col-span-full text-center py-20 text-gray-400 bg-white rounded-2xl border border-dashed">
-            <p className="mb-2 text-4xl">📭</p> Belum ada laporan masuk.
+      {/* NAVBAR */}
+      <nav className="relative z-50 w-full max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="flex items-center gap-2 font-bold text-xl tracking-wider">
+          <div className="bg-orange-600 p-1 rounded-lg">
+            <ShieldCheck size={24} className="text-white"/>
           </div>
-        ) : (
-          reports.map((rpt: any) => (
-            <div key={rpt.id} className={`bg-white p-4 rounded-2xl shadow-sm border transition hover:shadow-md ${rpt.ai_is_valid ? 'border-green-500' : 'border-gray-200'}`}>
-              <div className="flex justify-between mb-3">
-                <span className="font-bold text-xs text-blue-800 bg-blue-50 px-2 py-1 rounded uppercase tracking-wide">{rpt.projects?.name}</span>
-                <span className="text-xs text-gray-400">{new Date(rpt.created_at).toLocaleDateString()}</span>
-              </div>
-              <div className="h-48 bg-gray-100 rounded-xl overflow-hidden mb-3 relative group">
-                 <img src={rpt.photo_url} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" alt="Bukti" />
-                 {rpt.is_published_to_client && <div className="absolute top-2 right-2 bg-blue-600/90 text-white text-[10px] px-2 py-1 rounded-full flex items-center shadow-lg backdrop-blur-sm"><Eye className="w-3 h-3 mr-1"/> Tayang</div>}
-              </div>
-              <h3 className="font-bold text-gray-800">{rpt.work_items?.name}</h3>
-              <p className="text-sm text-gray-600 mt-1 line-clamp-2 italic">{rpt.description_text}</p>
-              <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
-                <div className="text-xs text-gray-500">Klaim: <b className="text-blue-600 text-sm">{rpt.claimed_progress}%</b></div>
-                {rpt.ai_is_valid ? (
-                  <button disabled className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-lg font-bold cursor-default"><CheckCircle className="w-3 h-3"/> Disetujui</button>
-                ) : (
-                  <button onClick={() => handleApprove(rpt.id)} disabled={processingId === rpt.id} className="flex items-center gap-1 text-xs bg-slate-900 hover:bg-black text-white px-4 py-1.5 rounded-lg font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50">
-                    {processingId === rpt.id ? <Loader2 className="w-3 h-3 animate-spin"/> : "Setujui & Publish"}
-                  </button>
-                )}
-              </div>
+          <span>CONTECH<span className="text-orange-500">LABS</span></span>
+        </div>
+        <Link 
+          href="/login" 
+          className="bg-white text-slate-950 px-6 py-2 rounded-full font-bold text-sm hover:bg-orange-50 transition transform hover:scale-105"
+        >
+          Login System
+        </Link>
+      </nav>
+
+      {/* HERO SECTION */}
+      <main className="relative z-10 flex flex-col items-center justify-center pt-20 pb-32 text-center px-4">
+        
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-xs font-bold uppercase tracking-widest mb-8 animate-pulse">
+          <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+          System Online v.2.0
+        </div>
+
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500 leading-tight">
+          CONSTRUCTION <br/>
+          <span className="text-orange-600 drop-shadow-2xl">INTELLIGENCE</span>
+        </h1>
+
+        <p className="max-w-2xl text-lg text-slate-400 mb-10 leading-relaxed">
+          Bukan sekadar aplikasi laporan. Ini adalah <span className="text-white font-bold">saraf digital</span> untuk bisnis konstruksi Anda. 
+          Pantau progres, validasi mandor, dan amankan cashflow dengan presisi AI.
+        </p>
+
+        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          <Link 
+            href="/login" 
+            className="group relative px-8 py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold text-lg transition-all shadow-[0_0_40px_-10px_rgba(234,88,12,0.5)] flex items-center justify-center gap-2"
+          >
+            AKSES CONSOLE <ArrowRight className="group-hover:translate-x-1 transition"/>
+          </Link>
+          <button className="px-8 py-4 bg-slate-900 border border-slate-800 text-slate-300 rounded-xl font-bold text-lg hover:border-slate-600 hover:text-white transition">
+            LIHAT DEMO
+          </button>
+        </div>
+
+      </main>
+
+      {/* FEATURES GRID (BENTO STYLE) */}
+      <section className="relative z-10 max-w-6xl mx-auto px-6 py-20 border-t border-slate-900">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* Card 1 */}
+          <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-8 rounded-2xl hover:border-orange-500/50 transition duration-500 group">
+            <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center mb-6 group-hover:bg-orange-600 transition">
+              <Globe className="text-white"/>
             </div>
-          ))
-        )}
-      </div>
+            <h3 className="text-xl font-bold mb-3 text-white">White Label</h3>
+            <p className="text-slate-400 text-sm">Gunakan logo dan identitas perusahaan Anda sendiri. Klien melihat ini sebagai sistem eksklusif milik Anda.</p>
+          </div>
+
+          {/* Card 2 */}
+          <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-8 rounded-2xl hover:border-orange-500/50 transition duration-500 group">
+            <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center mb-6 group-hover:bg-orange-600 transition">
+              <Zap className="text-white"/>
+            </div>
+            <h3 className="text-xl font-bold mb-3 text-white">Real-Time Sync</h3>
+            <p className="text-slate-400 text-sm">Laporan lapangan masuk detik itu juga. GPS terkunci, Foto ber-watermark. Anti manipulasi data.</p>
+          </div>
+
+          {/* Card 3 */}
+          <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-8 rounded-2xl hover:border-orange-500/50 transition duration-500 group">
+            <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center mb-6 group-hover:bg-orange-600 transition">
+              <Lock className="text-white"/>
+            </div>
+            <h3 className="text-xl font-bold mb-3 text-white">Secure Portal</h3>
+            <p className="text-slate-400 text-sm">Portal khusus untuk Owner melihat S-Curve dan progres fisik tanpa melihat kerumitan dapur operasional.</p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="relative z-10 border-t border-slate-900 py-8 text-center">
+        <p className="text-slate-600 text-xs tracking-widest uppercase">
+          SECURE CONNECTION • ENCRYPTED • CONTECH LABS
+        </p>
+      </footer>
+
     </div>
   );
 }
